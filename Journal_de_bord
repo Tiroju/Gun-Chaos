@@ -1,1 +1,5 @@
+1er Jour : Création du fichier originel où seulement la boucle de jeu existe . 
+2eme Jour :Import des personnages et de la map dans le code .
+3eme Jour :Changement de map + creation des personnages
+4eme Jour :Creation des platformes + implémentation des collisions
 25/05: Suggestion : Les platformes peuvent etre mises dans une classe
