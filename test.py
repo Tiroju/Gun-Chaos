@@ -6,6 +6,7 @@ from pygame_functions import *
 
 screen_width = 1200
 screen_height = 540
+gravity=0.8
 
 pygame.init()
 screen = pygame.display.set_mode((screen_width, screen_height))
@@ -21,8 +22,10 @@ player2_posy=0
 the_rev_sheet=Spritesheet('Images/Sugnoma_reverse.png')
 first_player = the_sheet.get_sprite(0, 0, 128, 125)
 second_player = the_sheet.get_sprite(128, 0, 128, 125)
+the_player=Player(500,0)
+the_second_player=Player(1000,0)
 
-
+clock=pygame.time.Clock()
 
 left1_animations=[the_rev_sheet.get_sprite(896,128,128,128),
                  the_rev_sheet.get_sprite(896,256,128,128),
@@ -53,34 +56,37 @@ player_width = 65
 player_height = 65
 first_player_rect = pygame.Rect(500, screen_height - 500, player_width, player_height)
 second_player_rect = pygame.Rect(1000, screen_height - 500, player_width, player_height)
-platf_rects = [Rect(1, 420, 850, 150),
-               Rect(170,400, 565, 150),
-               Rect(220,370, 465, 150),
-               Rect(290,340, 320, 150),
-               Rect(340,300, 200, 150),
-               Rect(30,150, 70, 50),
-               Rect(250,150, 280, 50),
-               Rect(800,150, 320, 50),
-               Rect(1100, 420, 850, 150)]
+platf_rects = [Rect(1, 420, 300, 25),
+               Rect(100,400, 300, 25),
+               Rect(220,370, 465, 25),
+               Rect(290,340, 320, 25),
+               Rect(260,240, 200, 25),
+               Rect(130,70, 200, 25),
+               Rect(370,160,440, 25),
+               Rect(820,70, 200, 25),
+               Rect(740, 410, 370, 25)]
 
-gravity = 0.5
-movement_speed = 2.0
 first_player_vel_y = 0.0
 second_player_vel_y = 0.0
 
 on_platf_player1 = False
 on_platf_player2 = False
 
+movement_speed=8
+
 while True:
     collide1 = False
     collide2 = False
     
-    def test(collids):
-        R=False
-        for c in collids:
-            if c== True:
-                return True
-        return False
+    t=clock.tick()
+    the_player.cd+=t
+    the_second_player.cd+=t
+    
+    if the_player.mort():
+        a=1
+    if the_second_player.mort():
+        a=2
+    
     for platf_rect in platf_rects:
         if first_player_rect.colliderect(platf_rect):
             collide1 = True
@@ -138,8 +144,8 @@ while True:
 
     # Jump with up arrow key
     if keys[pygame.K_UP] :
+        the_player.jump()
         first_player_vel_y = -5
-        player1_posy-=5
 
     first_player_vel_y += gravity
     proposed_rect = first_player_rect.move(0, int(first_player_vel_y))
@@ -190,8 +196,8 @@ while True:
 
     # Jump with W key
     if keys[pygame.K_z] :
+        the_second_player.jump()
         second_player_vel_y = -5
-        player2_posy-=5
 
     second_player_vel_y += gravity
     proposed_rect = second_player_rect.move(0, int(second_player_vel_y))
@@ -204,19 +210,13 @@ while True:
     second_player_vel_y += gravity
 
     proposed_first_player_rect = first_player_rect.move(0, int(first_player_vel_y))
-    if not proposed_first_player_rect.colliderect(second_player_rect):
-        first_player_rect = proposed_first_player_rect
-
     proposed_second_player_rect = second_player_rect.move(0, int(second_player_vel_y))
-    if not proposed_second_player_rect.colliderect(first_player_rect):
-        second_player_rect = proposed_second_player_rect
 
     for platf_rect in platf_rects:
-        if not proposed_first_player_rect.colliderect(platf_rect):
-            first_player_rect = proposed_first_player_rect
+        if platf_rect.colliderect(first_player_rect):
+            if player1_posy>0 :
+                first_player_rect.bottom=platf_rect.top
 
-        if not proposed_second_player_rect.colliderect(platf_rect):
-            second_player_rect = proposed_second_player_rect
 
 
 
@@ -241,27 +241,35 @@ while True:
     
     first_player=pygame.transform.scale(first_player,(65,65))
     second_player=pygame.transform.scale(second_player,(65,65))
-    for platf_rect in platf_rects:
-        if collide1:
-            first_player_rect.bottom = platf_rect.top
-            first_player_vel_y = 0.0  # Reset player's vertical velocity
-            on_platf_player1 = True  # Set on-platform flag to true
-
-        if collide2:
-            second_player_rect.bottom = platf_rect.top
-            second_player_vel_y = 0.0  # Reset player's vertical velocity
-            on_platf_player2 = True  # Set on-platform flag to true
-
-        if first_player_rect.bottom == platf_rect.top :
-            on_platf_player1 = True
-        else:
-            on_platf_player1 = False
-
-        if second_player_rect.bottom == platf_rect.top and second_player_vel_y >= 0:
-            on_platf_player2 = True
-        else:
-            on_platf_player2 = False
     
+    for platf in platf_rects:
+        if first_player_rect.colliderect(platf):
+            if first_player_vel_y > 0:
+                first_player_rect.y = platf.y - player_height
+                first_player_vel_y = 0.0
+                the_player.on_ground = True
+                break
+            elif first_player_vel_y < 0:
+                first_player_rect.y = platf.y + platf.height
+                first_player_vel_y = 0.0
+                break
+        else:
+            the_player.on_ground = False
+    
+    for platf in platf_rects:
+        if second_player_rect.colliderect(platf):
+            if second_player_vel_y > 0:
+                second_player_rect.y = platf.y - player_height
+                second_player_vel_y = 0.0
+                the_second_player.on_ground = True
+                break
+            elif second_player_vel_y < 0:
+                second_player_rect.y = platf.y + platf.height
+                second_player_vel_y = 0.0
+                break
+        else:
+            the_second_player.on_ground = False   
+
     screen.fill((0, 0, 0))
     screen.blit(background_image,(0,0))
     screen.blit(first_player,first_player_rect )
